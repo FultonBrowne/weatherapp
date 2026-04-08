@@ -1,0 +1,208 @@
+❯ First some groud rule for the apps we're using nextjs app server functions    
+  for every backend function (through use server driectives and funtion calls)  
+  we're going to use shadcn UI for all ui and state will be managed through     
+  tanstack qeury with reasona\nle caching. write smart code DO NOT use a use    
+  effect unless nessacty and deep dive how this no no use effect system for     
+  design works dpocument all of this in the CLAUDE md file and like yayayya     
+  lets do it                                                                    
+
+  Read 3 files, listed 1 directory (ctrl+o to expand)
+
+⏺ Next.js 16 with React 19 — let me check the relevant docs for server functions
+   and any breaking changes before writing the guidelines.
+
+  Read 1 file, listed 2 directories (ctrl+o to expand)
+
+⏺ Explore(Research Next.js 16 server functions)
+  ⎿  Done (13 tool uses · 104.2k tokens · 34s)
+  (ctrl+o to expand)
+
+⏺ Got all the context. Now let me write the CLAUDE.md with comprehensive ground
+  rules.
+
+⏺ Write(CLAUDE.md)
+  ⎿  Added 119 lines
+        1  @AGENTS.md
+        2 +                                                              
+        3 +# Weather App — Architecture & Ground Rules                   
+        4 +                                                              
+        5 +## Tech Stack                                                 
+        6 +- **Next.js 16** (App Router) — React 19                      
+        7 +- **shadcn/ui** — all UI components                           
+        8 +- **TanStack Query** — client state & server state management 
+        9 +- **Tailwind CSS v4** — styling                               
+       10 +- **TypeScript** — strict                                     
+       11 +                                                              
+       12 +## Core Principles                                            
+       13 +                                                              
+       14 +### 1. Server Functions for All Backend Logic                 
+       15 +Every backend operation goes through **server functions** usin
+          +g `'use server'` directives. No API routes, no route handlers 
+          +— just server functions called directly from client code or fo
+          +rms.                                                          
+       16 +                                                              
+       17 +```tsx                                                        
+       18 +// app/actions/weather.ts                                     
+       19 +'use server'                                                  
+       20 +                                                              
+       21 +export async function getWeather(city: string) {              
+       22 +  // This runs on the server. Called directly from client comp
+          +onents.                                                       
+       23 +  const data = await fetch(`...`)                             
+       24 +  return data.json()                                          
+       25 +}                                                             
+       26 +```                                                           
+       27 +                                                              
+       28 +**Two invocation patterns:**                                  
+       29 +- **Forms**: `<form action={serverFunction}>` — function recei
+          +ves `FormData`                                                
+       30 +- **Direct calls**: From client components via TanStack Query'
+          +s `queryFn` or `mutationFn`                                   
+       31 +                                                              
+       32 +### 2. TanStack Query for All Client State                    
+       33 +All server data flows through TanStack Query. This replaces `u
+          +seEffect` + `useState` fetch patterns entirely.               
+       34 +                                                              
+       35 +```tsx                                                        
+       36 +// Fetching data — NO useEffect needed                        
+       37 +const { data, isLoading } = useQuery({                        
+       38 +  queryKey: ['weather', city],                                
+       39 +  queryFn: () => getWeather(city),                            
+       40 +  staleTime: 5 * 60 * 1000, // reasonable caching             
+       41 +})                                                            
+       42 +                                                              
+       43 +// Mutations                                                  
+       44 +const mutation = useMutation({                                
+       45 +  mutationFn: saveLocation,                                   
+       46 +  onSuccess: () => queryClient.invalidateQueries({ queryKey: [
+          +'locations'] }),                                              
+       47 +})                                                            
+       48 +```                                                           
+       49 +                                                              
+       50 +### 3. NO useEffect (Unless Truly Necessary)                  
+       51 +                                                              
+       52 +**useEffect is a code smell in this architecture.** Almost eve
+          +ry use case has a better alternative:                         
+       53 +                                                              
+       54 +| Instead of useEffect for... | Use this instead |            
+       55 +|---|---|                                                     
+       56 +| Fetching data | `useQuery` from TanStack Query |            
+       57 +| Responding to state changes | Derive state during render, or
+          + use `useMemo` |                                              
+       58 +| Subscribing to external stores | `useSyncExternalStore` |   
+       59 +| Running code on mount | Server Components (run on server), o
+          +r `useQuery` with `enabled` |                                 
+       60 +| Transforming data for rendering | Compute it inline or `useM
+          +emo` |                                                        
+       61 +| Resetting state when props change | Use a `key` prop on the 
+          +component |                                                   
+       62 +| Listening to events | Event handlers directly on elements | 
+       63 +| Syncing two pieces of state | Remove the redundant state — d
+          +erive it |                                                    
+       64 +| POST/mutation on user action | `useMutation` from TanStack Q
+          +uery |                                                        
+       65 +                                                              
+       66 +**The only valid useEffect uses:**                            
+       67 +- Synchronizing with non-React external systems (DOM APIs, thi
+          +rd-party widgets, browser APIs like `IntersectionObserver`)   
+       68 +- Cleanup of subscriptions that have no hook equivalent       
+       69 +                                                              
+       70 +If you write a `useEffect`, add a comment explaining why no al
+          +ternative works.                                              
+       71 +                                                              
+       72 +### 4. shadcn/ui for All UI                                   
+       73 +Use shadcn components for everything. Don't build custom UI pr
+          +imitives. Install new components as needed via `npx shadcn@lat
+          +est add <component>`.                                         
+       74 +                                                              
+       75 +### 5. Smart Rendering Architecture                           
+       76 +- **Server Components** (default): Fetch data, render static c
+          +ontent, pass data down                                        
+       77 +- **Client Components** (`'use client'`): Only when interactiv
+          +ity is needed (forms, clicks, TanStack Query)                 
+       78 +- Keep client boundaries as small and as low in the tree as po
+          +ssible                                                        
+       79 +- Server Components can `await` data directly — no need for Ta
+          +nStack Query on the server                                    
+       80 +                                                              
+       81 +## Next.js 16 Breaking Changes (MUST FOLLOW)                  
+       82 +                                                              
+       83 +### Async Request APIs                                        
+       84 +`cookies()`, `headers()`, `draftMode()`, `params`, and `search
+          +Params` are now **async** and must be awaited:                
+       85 +```tsx                                                        
+       86 +// CORRECT in Next.js 16                                      
+       87 +export default async function Page({ params }: { params: Promi
+          +se<{ id: string }> }) {                                       
+       88 +  const { id } = await params                                 
+       89 +}                                                             
+       90 +```                                                           
+       91 +                                                              
+       92 +### Middleware renamed to Proxy                               
+       93 +- `middleware.ts` → `proxy.ts`                                
+       94 +- Export function named `proxy`, not `middleware`             
+       95 +- Runs on `nodejs` runtime only (not edge)                    
+       96 +                                                              
+       97 +### Caching                                                   
+       98 +- `cacheLife()` and `cacheTag()` are stable (no `unstable_` pr
+          +efix)                                                         
+       99 +- `use cache` directive available with `cacheComponents: true`
+          + in next.config                                               
+      100 +- Turbopack is now the default bundler                        
+      101 +                                                              
+      102 +## State Design Philosophy                                    
+      103 +                                                              
+      104 +**Derive, don't sync.** If a value can be computed from other 
+          +state or props, compute it — don't store it in state and try t
+          +o keep it in sync.                                            
+      105 +                                                              
+      106 +```tsx                                                        
+      107 +// BAD: syncing state with useEffect                          
+      108 +const [filteredItems, setFilteredItems] = useState(items)     
+      109 +useEffect(() => {                                             
+      110 +  setFilteredItems(items.filter(i => i.active))               
+      111 +}, [items])                                                   
+      112 +                                                              
+      113 +// GOOD: derive during render                                 
+      114 +const filteredItems = items.filter(i => i.active)             
+      115 +                                                              
+      116 +// GOOD: memoize if expensive                                 
+      117 +const filteredItems = useMemo(() => items.filter(i => i.active
+          +), [items])                                                   
+      118 +```                                                           
+      119 +                                                              
+      120 +**Single source of truth.** URL state lives in the URL (search
+          +Params). Server state lives in TanStack Query cache. UI state 
+          +(modals, tabs) lives in local `useState`. Never duplicate betw
+          +een them.                                                     
+
+⏺ Now let me save a memory about the user's preferences.
+
+  Recalled 1 memory, wrote 3 memories (ctrl+o to expand)
+
+⏺ CLAUDE.md is written and ready. Here's what's documented:
+
+  Architecture rules locked in:
+  - Server functions only — 'use server' for all backend logic, no API routes
+  - shadcn/ui — all UI components, no custom primitives
+  - TanStack Query — all client-side server state, with reasonable staleTime
+  caching
+  - No useEffect — full decision table of what to use instead (useQuery, derived
+   state, useMemo, key props, event handlers, useSyncExternalStore)
+
+  Next.js 16 gotchas documented:
+  - params/searchParams/cookies()/headers() are now async (must await)
+  - Middleware renamed to proxy.ts
+  - cacheLife()/cacheTag() stable (no unstable_ prefix)
+  - Turbopack is default
+
+  State philosophy:
+  - Derive, don't sync
+  - Single source of truth (URL state in URL, server state in TanStack Query
+  cache, UI state in local useState)
+
+  Let's build this thing! We'll need to install TanStack Query and set up shadcn
+   — want me to get those wired up?
+
+✻ Baked for 1m 51s
+

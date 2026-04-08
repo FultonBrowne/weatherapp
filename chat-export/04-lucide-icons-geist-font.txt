@@ -1,0 +1,306 @@
+❯ use lucide idcons and use the geist font you chud                             
+
+⏺ Fair enough — emojis are amateur hour. Let me swap in Lucide icons and make
+  sure Geist is wired up right.
+
+  Searched for 1 pattern, read 7 files (ctrl+o to expand)
+
+⏺ Alright, four files to fix. Let me do them all.
+
+⏺ Write(lib/weather-icons.ts)
+  ⎿  Added 33 lines, removed 28 lines
+       1 -// Map NWS shortForecast text to emoji icons                   
+       2 -// This avoids depending on NWS icon URLs which can be unreliab
+         -le                                                             
+       1 +import {                                                       
+       2 +  Sun,                                                         
+       3 +  CloudSun,                                                    
+       4 +  Cloud,                                                       
+       5 +  CloudRain,                                                   
+       6 +  CloudDrizzle,                                                
+       7 +  CloudSnow,                                                   
+       8 +  CloudLightning,                                              
+       9 +  CloudFog,                                                    
+      10 +  Wind,                                                        
+      11 +  Snowflake,                                                   
+      12 +  Tornado,                                                     
+      13 +  Thermometer,                                                 
+      14 +  ThermometerSnowflake,                                        
+      15 +  type LucideIcon,                                             
+      16 +} from 'lucide-react'                                          
+      17  
+       4 -export function getWeatherEmoji(shortForecast: string): string 
+         -{                                                              
+      18 +export function getWeatherIcon(shortForecast: string): LucideIc
+         +on {                                                           
+      19    const lower = shortForecast.toLowerCase()
+      20  
+       7 -  if (lower.includes('thunder')) return '26a1'                 
+       8 -  if (lower.includes('tornado') || lower.includes('funnel')) re
+         -turn '1f32a'                                                   
+       9 -  if (lower.includes('hurricane') || lower.includes('tropical')
+         -) return '1f300'                                               
+      10 -  if (lower.includes('snow') || lower.includes('blizzard')) ret
+         -urn '2744'                                                     
+      11 -  if (lower.includes('sleet') || lower.includes('freezing rain'
+         -) || lower.includes('ice')) return '1f9ca'                     
+      12 -  if (lower.includes('rain') || lower.includes('shower') || low
+         -er.includes('drizzle')) return '1f327'                         
+      13 -  if (lower.includes('fog') || lower.includes('mist') || lower.
+         -includes('haze')) return '1f32b'                               
+      14 -  if (lower.includes('cloud') || lower.includes('overcast')) re
+         -turn '2601'                                                    
+      15 -  if (lower.includes('partly')) return '26c5'                  
+      16 -  if (lower.includes('mostly sunny') || lower.includes('mostly 
+         -clear')) return '1f324'                                        
+      17 -  if (lower.includes('sunny') || lower.includes('clear')) retur
+         -n '2600'                                                       
+      18 -  if (lower.includes('wind')) return '1f4a8'                   
+      19 -  if (lower.includes('hot')) return '1f525'                    
+      20 -  if (lower.includes('cold')) return '1f976'                   
+      21 +  if (lower.includes('thunder')) return CloudLightning         
+      22 +  if (lower.includes('tornado') || lower.includes('funnel')) re
+         +turn Tornado                                                   
+      23 +  if (lower.includes('snow') || lower.includes('blizzard')) ret
+         +urn CloudSnow                                                  
+      24 +  if (lower.includes('sleet') || lower.includes('freezing rain'
+         +) || lower.includes('ice')) return Snowflake                   
+      25 +  if (lower.includes('drizzle')) return CloudDrizzle           
+      26 +  if (lower.includes('rain') || lower.includes('shower')) retur
+         +n CloudRain                                                    
+      27 +  if (lower.includes('fog') || lower.includes('mist') || lower.
+         +includes('haze')) return CloudFog                              
+      28 +  if (lower.includes('overcast')) return Cloud                 
+      29 +  if (lower.includes('partly') || lower.includes('mostly cloudy
+         +')) return CloudSun                                            
+      30 +  if (lower.includes('cloud')) return Cloud                    
+      31 +  if (lower.includes('mostly sunny') || lower.includes('mostly 
+         +clear')) return CloudSun                                       
+      32 +  if (lower.includes('sunny') || lower.includes('clear')) retur
+         +n Sun                                                          
+      33 +  if (lower.includes('wind')) return Wind                      
+      34 +  if (lower.includes('hot')) return Thermometer                
+      35 +  if (lower.includes('cold')) return ThermometerSnowflake      
+      36  
+      22 -  return '1f324'                                               
+      37 +  return Sun                                                   
+      38  }
+      24 -                                                               
+      25 -export function renderWeatherIcon(shortForecast: string, size: 
+         -'sm' | 'md' | 'lg' = 'md'): string {                           
+      26 -  const code = getWeatherEmoji(shortForecast)                  
+      27 -  const codePoint = parseInt(code, 16)                         
+      28 -  const emoji = String.fromCodePoint(codePoint)                
+      29 -  const sizeMap = { sm: '1.5rem', md: '2.5rem', lg: '4rem' }   
+      30 -  // Return the emoji character — component will handle sizing 
+         -via CSS                                                        
+      31 -  void sizeMap[size]                                           
+      32 -  return emoji                                                 
+      33 -}                                                              
+
+⏺ Now update all the components that used the emoji approach.
+
+⏺ Write(components/weather/current-weather.tsx)
+  ⎿  Added 13 lines, removed 11 lines
+      1 +import { Droplets, Wind } from 'lucide-react'                   
+      2  import { Card, CardContent } from '@/components/ui/card'
+      3  import { Skeleton } from '@/components/ui/skeleton'
+      4  import type { CurrentConditions, WeatherPoint } from '@/app/acti
+         ons/weather'
+      4 -import { getWeatherEmoji } from '@/lib/weather-icons'           
+      5 +import { getWeatherIcon } from '@/lib/weather-icons'            
+      6  
+      7  function windDirectionToCardinal(degrees: number | null): string
+          {
+      8    if (degrees == null) return ''
+     ...
+      38  
+      39    if (!conditions || !point) return null
+      40  
+      40 -  const emoji = String.fromCodePoint(                          
+      41 -    parseInt(getWeatherEmoji(conditions.textDescription), 16)  
+      42 -  )                                                            
+      41 +  const Icon = getWeatherIcon(conditions.textDescription)      
+      42  
+      43    return (
+      44      <Card className="border-border/50 shadow-sm overflow-hidden
+          ">
+     ...
+      63                {conditions.textDescription}
+      64              </p>
+      65            </div>
+      67 -          <span className="text-6xl" role="img" aria-label={con
+         -ditions.textDescription}>                                      
+      68 -            {emoji}                                            
+      69 -          </span>                                              
+      66 +          <Icon                                                
+      67 +            className="h-16 w-16 text-muted-foreground/60 strok
+         +e-[1.25]"                                                      
+      68 +            aria-label={conditions.textDescription}            
+      69 +          />                                                   
+      70          </div>
+      71  
+      72          <div className="mt-6 flex gap-8 text-sm text-muted-fore
+          ground">
+      73            {conditions.humidity != null && (
+      74 -            <div>                                              
+      74 +            <div className="flex items-center gap-1.5">        
+      75 +              <Droplets className="h-3.5 w-3.5" />             
+      76                <span className="text-foreground font-medium">{co
+          nditions.humidity}%</span>
+      76 -              <span className="ml-1">humidity</span>           
+      77 +              <span>humidity</span>                            
+      78              </div>
+      79            )}
+      80            {conditions.windSpeed != null && (
+      80 -            <div>                                              
+      81 +            <div className="flex items-center gap-1.5">        
+      82 +              <Wind className="h-3.5 w-3.5" />                 
+      83                <span className="text-foreground font-medium">{co
+          nditions.windSpeed} mph</span>
+      82 -              <span className="ml-1">                          
+      84 +              <span>                                           
+      85                  {windDirectionToCardinal(conditions.windDirecti
+          on)} wind
+      86                </span>
+      87              </div>
+
+⏺ Write(components/weather/hourly-forecast.tsx)
+  ⎿  Added 6 lines, removed 7 lines
+      2  import { ScrollArea, ScrollBar } from '@/components/ui/scroll-ar
+         ea'
+      3  import { Skeleton } from '@/components/ui/skeleton'
+      4  import type { ForecastPeriod } from '@/app/actions/weather'
+      5 -import { getWeatherEmoji } from '@/lib/weather-icons'           
+      5 +import { getWeatherIcon } from '@/lib/weather-icons'            
+      6  
+      7  function formatHour(isoString: string): string {
+      8    const date = new Date(isoString)
+     ...
+      55          <ScrollArea className="w-full">
+      56            <div className="flex gap-6 pb-3">
+      57              {periods.map((period) => {
+      58 -              const emoji = String.fromCodePoint(              
+      59 -                parseInt(getWeatherEmoji(period.shortForecast),
+         - 16)                                                           
+      60 -              )                                                
+      58 +              const Icon = getWeatherIcon(period.shortForecast)
+      59                return (
+      60                  <div
+      61                    key={period.number}
+     ...
+      64                    <span className="text-xs text-muted-foregroun
+          d">
+      65                      {period.number === 1 ? 'Now' : formatHour(p
+          eriod.startTime)}
+      66                    </span>
+      69 -                  <span className="text-2xl" role="img" aria-la
+         -bel={period.shortForecast}>                                    
+      70 -                    {emoji}                                    
+      71 -                  </span>                                      
+      67 +                  <Icon                                        
+      68 +                    className="h-6 w-6 text-muted-foreground/70
+         + stroke-[1.5]"                                                 
+      69 +                    aria-label={period.shortForecast}          
+      70 +                  />                                           
+      71                    <span className="text-sm font-medium">
+      72                      {period.temperature}°
+      73                    </span>
+
+⏺ Write(components/weather/weekly-forecast.tsx)
+  ⎿  Added 6 lines, removed 7 lines
+      2  import { Skeleton } from '@/components/ui/skeleton'
+      3  import { Separator } from '@/components/ui/separator'
+      4  import type { ForecastPeriod } from '@/app/actions/weather'
+      5 -import { getWeatherEmoji } from '@/lib/weather-icons'           
+      5 +import { getWeatherIcon } from '@/lib/weather-icons'            
+      6  
+      7  export function WeeklyForecast({
+      8    periods,
+     ...
+      58        <CardContent>
+      59          <div className="space-y-0">
+      60            {days.map(({ day, night }, i) => {
+      61 -            const emoji = String.fromCodePoint(                
+      62 -              parseInt(getWeatherEmoji(day.shortForecast), 16) 
+      63 -            )                                                  
+      61 +            const Icon = getWeatherIcon(day.shortForecast)     
+      62              return (
+      63                <div key={day.number}>
+      64                  {i > 0 && <Separator className="my-3" />}
+     ...
+      66                    <span className="text-sm font-medium w-24 shr
+          ink-0">
+      67                      {day.name}
+      68                    </span>
+      71 -                  <span className="text-xl" role="img" aria-lab
+         -el={day.shortForecast}>                                        
+      72 -                    {emoji}                                    
+      73 -                  </span>                                      
+      69 +                  <Icon                                        
+      70 +                    className="h-5 w-5 text-muted-foreground/70
+         + stroke-[1.5] shrink-0"                                        
+      71 +                    aria-label={day.shortForecast}             
+      72 +                  />                                           
+      73                    <span className="text-sm text-muted-foregroun
+          d flex-1 min-w-0 truncate">
+      74                      {day.shortForecast}
+      75                    </span>
+
+⏺ Now fix the dashboard's empty-state emoji and fix the Geist font mapping in
+  globals.css.
+
+⏺ Update(components/weather/weather-dashboard.tsx)
+  ⎿  Added 2 lines, removed 3 lines
+      1  'use client'
+      2  
+      3  import { useState } from 'react'
+      4 +import { CloudSun } from 'lucide-react'                         
+      5  import type { GeocodingResult } from '@/app/actions/weather'
+      6  import {
+      7    useWeatherPoint,
+     ...
+      61  
+      62        {!location && (
+      63          <div className="text-center py-20 text-muted-foreground
+          ">
+      63 -          <p className="text-6xl mb-4">                        
+      64 -            {String.fromCodePoint(0x1f324)}                    
+      65 -          </p>                                                 
+      64 +          <CloudSun className="h-16 w-16 mx-auto mb-4 stroke-[1
+         +.25]" />                                                       
+      65            <p className="text-lg font-light">
+      66              Search for a city to get started
+      67            </p>
+
+⏺ Now fix the Geist font mapping — the --font-sans variable is circular right
+  now.
+
+⏺ Update(app/globals.css)
+  ⎿  Added 1 line, removed 1 line
+       7  @theme inline {
+       8    --color-background: var(--background);
+       9    --color-foreground: var(--foreground);
+      10 -  --font-sans: var(--font-sans);                               
+      10 +  --font-sans: var(--font-geist-sans);                         
+      11    --font-mono: var(--font-geist-mono);
+      12    --font-heading: var(--font-sans);
+      13    --color-sidebar-ring: var(--sidebar-ring);
+
+⏺ Build it.
+⏺ Bash(npm run build 2>&1)
+  ⎿  > weatherapp@0.1.0 build
+     > next build
+     … +20 lines (ctrl+o to expand)
+
+⏺ Clean build. Done:
+
+  - Lucide icons everywhere — Sun, CloudSun, Cloud, CloudRain, CloudSnow,
+  CloudLightning, CloudFog, Wind, Tornado, etc. mapped from NWS forecast text.
+  Thin stroke-[1.25] for that clean look.
+  - Geist font fixed — --font-sans was pointing at itself (circular
+  var(--font-sans)), now correctly maps to var(--font-geist-sans).
+  - Added Droplets and Wind icons to the current weather stats row too.
+
+✻ Worked for 1m 27s
+
